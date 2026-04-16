@@ -52,6 +52,11 @@
             background-color: #357abd;
         }
 
+        button:disabled {
+            background-color: #a0a0a0;
+            cursor: not-allowed;
+        }
+
         .error {
             color: red;
             font-size: 13px;
@@ -60,7 +65,6 @@
     </style>
 </head>
 <body>
-
     <main>
         <h1>Control de Vacaciones</h1>
 
@@ -75,6 +79,5 @@
             <p class="error" id="error"></p>
         </form>
     </main>
-
 </body>
 </html>
