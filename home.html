@@ -1,11 +1,123 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Empleados - Control de Vacaciones</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 18px;
+            color: #333;
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        main {
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        .filtro {
+            margin-bottom: 15px;
+        }
+
+        .filtro input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 250px;
+        }
+
+        .filtro input:focus {
+            border-color: #4a90e2;
+            outline: none;
+        }
+
+        button {
+            padding: 7px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            color: white;
+        }
+
+        .btn-filtrar { background-color: #4a90e2; }
+        .btn-insertar { background-color: #4a90e2; margin-bottom: 15px; }
+        .btn-logout { background-color: #999; }
+        .btn-consultar { background-color: #4a90e2; }
+        .btn-editar { background-color: #f0ad4e; }
+        .btn-eliminar { background-color: #d9534f; }
+        .btn-movimientos { background-color: #5cb85c; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 8px;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f0f2f5;
+        }
+    </style>
 </head>
 <body>
-    
+
+    <div class="top">
+        <h1>Control de Vacaciones</h1>
+        <form>
+            <button type="submit" class="btn-logout">Cerrar Sesión</button>
+        </form>
+    </div>
+
+    <main>
+        <div class="filtro">
+            <form>
+                <input type="text" name="filtro" placeholder="Buscar por nombre o documento" />
+                <button type="submit" class="btn-filtrar">Filtrar</button>
+            </form>
+        </div>
+
+        <button class="btn-insertar">Insertar Empleado</button>
+
+        <table>
+            <tr>
+                <th>Documento</th>
+                <th>Nombre</th>
+                <th>Puesto</th>
+                <th>Acciones</th>
+            </tr>
+            <tr>
+                <td>6993943</td>
+                <td>Kaitlyn Jensen</td>
+                <td>Camarero</td>
+                <td>
+                    <button class="btn-consultar">Consultar</button>
+                    <button class="btn-editar">Editar</button>
+                    <button class="btn-eliminar">Eliminar</button>
+                    <button class="btn-movimientos">Movimientos</button>
+                </td>
+            </tr>
+        </table>
+    </main>
+
 </body>
 </html>

@@ -1,7 +1,8 @@
 CREATE PROCEDURE dbo.procLogin
-     @inUsername VARCHAR(64)  --Username del usuario
+    @inUsername VARCHAR(64)  --Username del usuario
     ,@inPassword VARCHAR(64)  --Password del usuario
     ,@inPostInIP VARCHAR(64)  --IP de origen del login
+    ,@outResultCode   INT OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON
@@ -11,7 +12,6 @@ BEGIN
     DECLARE @CountIntentos INT
     DECLARE @IdTipoEvento INT
     DECLARE @DescripcionEvento VARCHAR(256)
-    DECLARE @outResultCode INT 
     SET @outResultCode = 0
 
     BEGIN TRY
@@ -23,18 +23,14 @@ BEGIN
         IF (@IdUsuario IS NULL) --Comprueba que el usuario exista
         BEGIN
             SET @outResultCode = 50001
-            SELECT @outResultCode AS Codigo
-                ,e.Descripcion AS Descripcion
-            FROM dbo.Error AS e
-            WHERE (e.Codigo = @outResultCode)
             RETURN
         END
 
         SELECT @CountIntentos = COUNT(b.Id)
         FROM dbo.BitacoraEvento AS b
         WHERE (b.IdTipoEvento = 2)
-          AND (b.IdPostByUser = @IdUsuario)
-          AND (b.PostTime >= DATEADD(MINUTE, -20, GETDATE()))
+            AND (b.IdPostByUser = @IdUsuario)
+            AND (b.PostTime >= DATEADD(MINUTE, -20, GETDATE()))
 
         IF (@CountIntentos > 5) --Comprueba que no haya pasado los 5 intentos
         BEGIN
@@ -46,14 +42,14 @@ BEGIN
         BEGIN
             SELECT @PassUsuario = u.Password
             FROM dbo.Usuario AS u
-            WHERE (u.Id = @IdUsuario)
-              AND (u.Password = @inPassword)
+            WHERE (u.Id = @IdUsuario) 
+                AND (u.Password = @inPassword)
 
             IF (@PassUsuario IS NULL) --Comprueba los intentos de sesion de fallo contraseña
             BEGIN
                 SET @outResultCode = 50002
                 SET @IdTipoEvento = 2
-                SET @DescripcionEvento = 'Intento: ' +CAST((@CountIntentos+1) AS VARCHAR)+' Error: 50002'
+                SET @DescripcionEvento = 'Intento: ' + CAST((@CountIntentos + 1) AS VARCHAR) + ' Error: 50002'
             END
             ELSE
             BEGIN
@@ -66,14 +62,14 @@ BEGIN
         BEGIN TRANSACTION
 
             INSERT INTO dbo.BitacoraEvento (
-                 IdTipoEvento
+                IdTipoEvento
                 ,Descripcion
                 ,IdPostByUser
                 ,PostInIP
                 ,PostTime
             )
             VALUES (
-                 @IdTipoEvento
+                @IdTipoEvento
                 ,@DescripcionEvento
                 ,@IdUsuario
                 ,@inPostInIP
@@ -81,23 +77,11 @@ BEGIN
             )
 
         COMMIT TRANSACTION
-        IF (@outResultCode = 0) -- Comprueba caso de exito
-        BEGIN
-            SELECT @outResultCode AS Codigo
-                ,'' AS Descripcion
-        END
-        ELSE
-        BEGIN
-            SELECT @outResultCode AS Codigo
-                ,e.Descripcion AS Descripcion
-            FROM dbo.Error AS e
-            WHERE (e.Codigo = @outResultCode)
-        END
 
     END TRY
     BEGIN CATCH
         INSERT INTO dbo.DBError (
-             UserName
+            UserName
             ,Number
             ,State
             ,Severity
@@ -107,7 +91,7 @@ BEGIN
             ,DateTime
         )
         VALUES (
-             @inUsername
+            @inUsername
             ,ERROR_NUMBER()
             ,ERROR_STATE()
             ,ERROR_SEVERITY()
@@ -118,10 +102,5 @@ BEGIN
         )
 
         SET @outResultCode = 50008
-        SELECT @outResultCode AS Codigo
-            ,e.Descripcion AS Descripcion
-        FROM dbo.Error AS e
-        WHERE (e.Codigo = @outResultCode)
-
     END CATCH
 END

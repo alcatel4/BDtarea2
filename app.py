@@ -35,13 +35,11 @@ def do_login():
     cursor = conn.cursor()
 
     cursor.execute(
-        "EXEC dbo.procLogin @inUsername=?, @inPassword=?, @inPostInIP=?",
+        "DECLARE @rc INT; EXEC dbo.procLogin ?, ?, ?, @rc OUTPUT; SELECT @rc",
         username, password, ip
     )
-
     row = cursor.fetchone()
     code = row[0]
-    msg = row[1]  
 
     conn.commit()
     cursor.close()
@@ -51,11 +49,22 @@ def do_login():
         session['usuario'] = username
         return redirect(url_for('home'))
     else:
+        conn2 = get_connection()
+        cursor2 = conn2.cursor()
+        cursor2.execute(
+            "DECLARE @rc INT; EXEC dbo.procErroresLogin ?, @rc OUTPUT; SELECT @rc",
+            code
+        )
+        row2 = cursor2.fetchone()
+        msg = row2[0]
+        cursor2.close()
+        conn2.close()
+
         with open('login.html', 'r', encoding='utf-8') as f:
             html = f.read()
         html = html.replace(
             '<p class="error" id="error"></p>',
-            f'<p class="error" id="error">{msg}</p>'  
+            f'<p class="error" id="error">{msg}</p>'
         )
         if code == 50003:
             html = html.replace(
@@ -68,7 +77,8 @@ def do_login():
 def home():
     if 'usuario' not in session:
         return redirect(url_for('login'))
-    return f'Bienvenido {session["usuario"]}'
-
+    with open('home.html', 'r', encoding='utf-8') as f:
+        html = f.read()
+    return html
 if __name__ == '__main__':
     app.run(debug=True)
