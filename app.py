@@ -21,7 +21,7 @@ def index():
 
 @app.route('/login', methods=['GET'])
 def login():
-    with open('login.html', 'r', encoding='utf-8') as f:
+    with open('html/login.html', 'r', encoding='utf-8') as f:
         html = f.read()
     return html
 
@@ -60,7 +60,7 @@ def do_login():
         cursor2.close()
         conn2.close()
 
-        with open('login.html', 'r', encoding='utf-8') as f:
+        with open('html/login.html', 'r', encoding='utf-8') as f:
             html = f.read()
         html = html.replace(
             '<p class="error" id="error"></p>',
@@ -77,7 +77,7 @@ def do_login():
 def home():
     if 'usuario' not in session:
         return redirect(url_for('login'))
-    with open('home.html', 'r', encoding='utf-8') as f:
+    with open('html/home.html', 'r', encoding='utf-8') as f:
         html = f.read()
     return html
 if __name__ == '__main__':
