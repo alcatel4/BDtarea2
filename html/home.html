@@ -83,14 +83,14 @@
 
     <div class="top">
         <h1>Control de Vacaciones</h1>
-        <form>
+        <form action="/logout" method="POST">
             <button type="submit" class="btn-logout">Cerrar Sesión</button>
         </form>
     </div>
 
     <main>
         <div class="filtro">
-            <form>
+            <form action="/home" method="GET">
                 <input type="text" name="filtro" placeholder="Buscar por nombre o documento" />
                 <button type="submit" class="btn-filtrar">Filtrar</button>
             </form>
@@ -100,22 +100,11 @@
 
         <table>
             <tr>
-                <th>Documento</th>
+                <th>Identidad</th>
                 <th>Nombre</th>
-                <th>Puesto</th>
                 <th>Acciones</th>
             </tr>
-            <tr>
-                <td>6993943</td>
-                <td>Kaitlyn Jensen</td>
-                <td>Camarero</td>
-                <td>
-                    <button class="btn-consultar">Consultar</button>
-                    <button class="btn-editar">Editar</button>
-                    <button class="btn-eliminar">Eliminar</button>
-                    <button class="btn-movimientos">Movimientos</button>
-                </td>
-            </tr>
+            <!--FILAS-->
         </table>
     </main>
 
