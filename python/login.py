@@ -1,31 +1,19 @@
-import pyodbc
-from flask import Flask, request, session, redirect, url_for
+from flask import Blueprint, request, session, redirect, url_for
+from conexionDB import get_connection
 
-app = Flask(__name__)
-app.secret_key = 'clave_secreta'
+login_bp = Blueprint('login', __name__)
 
-def get_connection():
-    return pyodbc.connect(
-        'DRIVER={ODBC Driver 17 for SQL Server};'
-        'SERVER=tcp:sqlserver-tarea1.database.windows.net;'
-        'DATABASE=bd_tarea2;'
-        'UID=Tarea1;'
-        'PWD=@2026SQL;'
-        'Encrypt=yes;'
-        'TrustServerCertificate=no;'
-    )
-
-@app.route('/', methods=['GET'])
+@login_bp.route('/', methods=['GET'])
 def index():
-    return redirect(url_for('login'))
+    return redirect(url_for('login.login'))
 
-@app.route('/login', methods=['GET'])
+@login_bp.route('/login', methods=['GET'])
 def login():
     with open('html/login.html', 'r', encoding='utf-8') as f:
         html = f.read()
     return html
 
-@app.route('/login', methods=['POST'])
+@login_bp.route('/login', methods=['POST'])
 def do_login():
     username = request.form.get('usuario')
     password = request.form.get('password')
@@ -47,7 +35,7 @@ def do_login():
 
     if code == 0:
         session['usuario'] = username
-        return redirect(url_for('home'))
+        return redirect(url_for('home.home'))
     else:
         conn2 = get_connection()
         cursor2 = conn2.cursor()
@@ -56,7 +44,7 @@ def do_login():
             code
         )
         row2 = cursor2.fetchone()
-        msg = row2[0]
+        msg = row2[0] if row2 else 'Error desconocido'
         cursor2.close()
         conn2.close()
 
@@ -72,13 +60,3 @@ def do_login():
                 '<button type="submit" disabled>Ingresar</button>'
             )
         return html
-    
-@app.route('/home')
-def home():
-    if 'usuario' not in session:
-        return redirect(url_for('login'))
-    with open('html/home.html', 'r', encoding='utf-8') as f:
-        html = f.read()
-    return html
-if __name__ == '__main__':
-    app.run(debug=True)
