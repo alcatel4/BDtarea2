@@ -9,12 +9,12 @@ AS
 BEGIN
     SET NOCOUNT ON
 
-    DECLARE @IdUsuario INT
     DECLARE @ValorID VARCHAR(64)
     DECLARE @NombreExistente VARCHAR(64)
     DECLARE @NombrePuesto VARCHAR(64)
     DECLARE @DescError VARCHAR(256)
 
+    DECLARE @IdUsuario INT
     DECLARE @IdTipoEvento INT
     DECLARE @DescripcionEvento VARCHAR(256)
 
@@ -46,7 +46,7 @@ BEGIN
                ,@NombreExistente = e.Nombre
         FROM dbo.Empleado AS e
         WHERE (e.ValorDocumentoIdentidad = @inValorDocumentoIdentidad)
-        OR (e.Nombre = @inNombre);
+            OR (e.Nombre = @inNombre);
 
         -- Verifica que el valor del documento de identidad no esté repetido en la base de datos
         IF (@ValorID = @inValorDocumentoIdentidad)
