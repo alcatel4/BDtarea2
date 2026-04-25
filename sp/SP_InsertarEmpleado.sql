@@ -15,53 +15,71 @@ BEGIN
     DECLARE @NombrePuesto VARCHAR(64)
     DECLARE @DescError VARCHAR(256)
 
-    SET @outResultCode = 0
+    DECLARE @IdTipoEvento INT
+    DECLARE @DescripcionEvento VARCHAR(256)
+
+    SET @outResultCode = 0;
 
     BEGIN TRY
-
-        SELECT @IdUsuario = u.Id
-        FROM dbo.Usuario AS u
-        WHERE (u.Username = @inUsername)
-
-        SELECT @NombrePuesto = p.Nombre
-        FROM dbo.Puesto AS p
-        WHERE (p.Id = @inIdPuesto)
-
-        SELECT @ValorID = e.ValorDocumentoIdentidad
-        FROM dbo.Empleado AS e
-        WHERE (e.ValorDocumentoIdentidad = @inValorDocumentoIdentidad)
-
-        SELECT @NombreExistente = e.Nombre
-        FROM dbo.Empleado AS e
-        WHERE (e.Nombre = @inNombre)
 
         -- Verifica que TODOS los caracteres sean numéricos
         IF (@inValorDocumentoIdentidad LIKE '%[^0-9]%')
         BEGIN
             SET @outResultCode = 50010
-        END
+        END;
 
         -- Verificar que el nombre debe ser alfabético y puede contener espacios entre nombre y apellidos
         ELSE IF (@inNombre LIKE '%[^a-zA-Z ]%')
         BEGIN
             SET @outResultCode = 50009
-        END
+        END;
+
+        SELECT @IdUsuario = u.Id
+        FROM dbo.Usuario AS u
+        WHERE (u.Username = @inUsername);
+
+        SELECT @NombrePuesto = p.Nombre
+        FROM dbo.Puesto AS p
+        WHERE (p.Id = @inIdPuesto);
+
+        SELECT @ValorID = e.ValorDocumentoIdentidad
+               ,@NombreExistente = e.Nombre
+        FROM dbo.Empleado AS e
+        WHERE (e.ValorDocumentoIdentidad = @inValorDocumentoIdentidad)
+        OR (e.Nombre = @inNombre);
 
         -- Verifica que el valor del documento de identidad no esté repetido en la base de datos
-        ELSE IF (@ValorID = @inValorDocumentoIdentidad)
+        IF (@ValorID = @inValorDocumentoIdentidad)
         BEGIN
             SET @outResultCode = 50004
-        END
+        END;
 
         -- Verificar que el nombre no esté repetido en la base de datos
         ELSE IF (@NombreExistente = @inNombre)
         BEGIN
             SET @outResultCode = 50005
-        END
+        END;
+
+        -- Registro de bitácora fallida, siempre que haya un error de validación
+        IF (@outResultCode <> 0)
+        BEGIN
+            SELECT @DescError = er.Descripcion
+            FROM dbo.Error AS er
+            WHERE (er.Codigo = @outResultCode)
+ 
+            SET @IdTipoEvento = 5
+            SET @DescripcionEvento = @DescError + ' ' + @inValorDocumentoIdentidad + ' ' + @inNombre + ' ' + @NombrePuesto
+        END;
 
         ELSE
         BEGIN
-            BEGIN TRANSACTION
+            SET @IdTipoEvento = 6
+            SET @DescripcionEvento = @inValorDocumentoIdentidad + ' ' + @inNombre + ' ' + @NombrePuesto
+        END;
+
+        BEGIN TRANSACTION
+            IF (@outResultCode = 0)
+            BEGIN
                 INSERT INTO dbo.Empleado (
                     IdPuesto
                     ,ValorDocumentoIdentidad
@@ -77,59 +95,29 @@ BEGIN
                     ,GETDATE()
                     ,0
                     ,1
-                )
+                );
+            END;
 
-                -- Bitácora de eventos
-                INSERT INTO dbo.BitacoraEvento (
-                    idTipoEvento
-                    ,Descripcion
-                    ,IdPostByUser
-                    ,PostInIP
-                    ,PostTime
-                )
-                VALUES (
-                    6
-                    ,@inValorDocumentoIdentidad + ' ' + @inNombre + ' ' + @NombrePuesto
-                    ,@idUsuario
-                    ,@inPostInIP
-                    ,GETDATE()
-                )
-            COMMIT TRANSACTION
-        END
+            -- Bitácora de eventos
+            INSERT INTO dbo.BitacoraEvento (
+                idTipoEvento
+                ,Descripcion
+                ,IdPostByUser
+                ,PostInIP
+                ,PostTime
+            )
+            VALUES (
+                @TipoEvento
+                ,@DescripcionEvento
+                ,@idUsuario
+                ,@inPostInIP
+                ,GETDATE()
+            );
+        COMMIT TRANSACTION
 
-        -- Registro de bitácora fallida, siempre que haya un error de validación
-        IF (@outResultCode <> 0)
-        BEGIN
-            SELECT @DescError = er.Descripcion
-            FROM dbo.Error AS er
-            WHERE (er.Codigo = @outResultCode)
- 
-            BEGIN TRANSACTION
- 
-                INSERT INTO dbo.BitacoraEvento (
-                     IdTipoEvento
-                    ,Descripcion
-                    ,IdPostByUser
-                    ,PostInIP
-                    ,PostTime
-                )
-                VALUES (
-                     5
-                    ,@DescError + ' ' + @inValorDocumentoIdentidad + ' ' + @inNombre + ' ' + @NombrePuesto
-                    ,@IdUsuario
-                    ,@inPostInIP
-                    ,GETDATE()
-                )
- 
-            COMMIT TRANSACTION
-        END
-    END TRY
+    END TRY;
 
     BEGIN CATCH
-
-        SELECT @DescError = er.Descripcion
-        FROM dbo.Error AS er
-        WHERE (er.Codigo = @outResultCode)
 
         INSERT INTO dbo.DBError(
              UserName
@@ -153,5 +141,5 @@ BEGIN
         )
 
         SET @outResultCode = 50008
-    END CATCH
-END
+    END CATCH;
+END;
