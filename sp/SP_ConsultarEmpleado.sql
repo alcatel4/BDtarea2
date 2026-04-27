@@ -22,7 +22,6 @@ BEGIN
     END TRY
 
     BEGIN CATCH
-
         INSERT INTO dbo.DBError(
              UserName
             ,Number
