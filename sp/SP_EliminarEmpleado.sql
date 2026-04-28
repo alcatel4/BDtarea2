@@ -15,6 +15,7 @@ BEGIN
     DECLARE @NombreEmpleado VARCHAR(64)
     DECLARE @NombrePuestoEmpleado VARCHAR(64)
     DECLARE @SaldoVacacionesEmpleado MONEY
+    DECLARE @DescripcionEvento VARCHAR(256)
 
     DECLARE @IdUsuario INT -- ID del usuario que realiza la eliminación
     DECLARE @IdTipoEvento INT -- ID del tipo de evento para la bitacora (9 = intento de borrado, 10 = eliminacion confirmada)
@@ -34,6 +35,47 @@ BEGIN
     SELECT @IdUsuario = u.Id
     FROM dbo.Usuario AS u
     WHERE (u.Username = @inUsername)
+
+    IF (@inConfirmacionEliminacion = 0)
+    BEGIN
+        SET @IdTipoEvento = 9; -- Intento de borrado
+    END
+
+    ELSE
+    BEGIN
+        SET @IdTipoEvento = 10; -- Eliminación confirmada
+    END
+
+    SET @DescripcionEvento = @inValorDocumentoIdentidad + ' - ' + @NombreEmpleado + ' - ' + @NombrePuestoEmpleado + ' - ' + CAST(@SaldoVacacionesEmpleado AS VARCHAR(32));
+
+    BEGIN TRANSACTION
+
+        IF (@inConfirmacionEliminacion = 1)
+        BEGIN
+            -- Si fue confirmado hay que cambiar el estado del empleado en EsActivo a 0
+            UPDATE e
+            SET e.EsActivo = 0
+            FROM dbo.Empleado AS e
+            WHERE (e.ValorDocumentoIdentidad = @inValorDocumentoIdentidad);
+        END
+
+        -- Sea cual sea el caso hay que insertar el evento en la bitacora
+        INSERT INTO dbo.BitacoraEvento (
+             IdTipoEvento
+            ,Descripcion
+            ,IdPostByUser
+            ,PostInIP
+            ,PostTime
+        )
+        VALUES(
+            @IdTipoEvento
+            ,@DescripcionEvento
+            ,@IdUsuario
+            ,@inPostInIP
+            ,GETDATE()
+        )
+
+    COMMIT TRANSACTION
 
     END TRY
 
