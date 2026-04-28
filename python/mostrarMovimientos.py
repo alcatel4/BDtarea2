@@ -3,12 +3,12 @@ from conexionDB import get_connection
 
 movimientos_bp = Blueprint('movimientos', __name__)
 
-@movimientos_bp.route('/movimientos', methods=['POST'])
+@movimientos_bp.route('/movimientos',methods=['GET', 'POST'])
 def movimientos():
     if 'usuario' not in session:
         return redirect(url_for('login.login'))
 
-    doc_id = request.form.get('doc_id')
+    doc_id = request.form.get('doc_id') or request.args.get('doc_id')
     username = session['usuario']
 
     conn = get_connection()

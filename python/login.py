@@ -40,8 +40,8 @@ def do_login():
         conn2 = get_connection()
         cursor2 = conn2.cursor()
         cursor2.execute(
-            "DECLARE @rc INT; EXEC dbo.procErroresLogin ?, @rc OUTPUT; SELECT @rc",
-            code
+            "{CALL dbo.procErroresLogin(?, ?)}",
+            code, 0
         )
         row2 = cursor2.fetchone()
         msg = row2[0] if row2 else 'Error desconocido'
