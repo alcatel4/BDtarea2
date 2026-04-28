@@ -1,4 +1,3 @@
-
 from flask import Blueprint, request, session, redirect, url_for
 from conexionDB import get_connection
 
@@ -44,9 +43,12 @@ def home():
                         <input type="hidden" name="doc_id" value="{row[0]}" />
                         <button class="btn-accion btn-editar">Editar</button>
                     </form>
-                    <form action="/eliminar" method="POST" style="display:inline">
+                    <form action="/eliminar" method="POST" style="display:inline" id="form-eliminar-{row[0]}">
                         <input type="hidden" name="doc_id" value="{row[0]}" />
-                        <button class="btn-accion btn-eliminar">Eliminar</button>
+                        <input type="hidden" name="nombre_empleado" value="{row[1]}" />
+                        <input type="hidden" name="confirmado" value="0" id="confirmado-{row[0]}" />
+                        <button type="button" class="btn-accion btn-eliminar"
+                            onclick="confirmarEliminar('{row[0]}', '{row[1]}')">Eliminar</button>
                     </form>
                     <form action="/movimientos" method="POST" style="display:inline">
                         <input type="hidden" name="doc_id" value="{row[0]}" />
@@ -58,5 +60,18 @@ def home():
     with open('html/home.html', 'r', encoding='utf-8') as f:
         html = f.read()
     
+    script = """
+    <script>
+    function confirmarEliminar(docId, nombre) {
+        var mensaje = 'Documento: ' + docId + '\\nNombre: ' + nombre + '\\n\\n¿Está seguro de eliminar este empleado?';
+        if (confirm(mensaje)) {
+            document.getElementById('confirmado-' + docId).value = '1';
+        }
+        document.getElementById('form-eliminar-' + docId).submit();
+    }
+    </script>
+    """
+
     html = html.replace('<!--FILAS-->', filas_html)
+    html = html.replace('</body>', script + '</body>')
     return html

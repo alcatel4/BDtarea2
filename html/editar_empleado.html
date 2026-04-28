@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Empleado - Control de Vacaciones</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 18px;
+            color: #333;
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        main {
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            max-width: 450px;
+        }
+
+        h2 {
+            font-size: 15px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        label {
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 15px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 13px;
+        }
+
+        input:focus, select:focus {
+            border-color: #4a90e2;
+            outline: none;
+        }
+
+        .botones {
+            display: flex;
+            gap: 8px;
+            margin-top: 5px;
+        }
+
+        button {
+            padding: 7px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            color: white;
+        }
+
+        .btn-guardar { background-color: #f0ad4e; }
+        .btn-guardar:hover { background-color: #d08a2e; }
+        .btn-cancelar { background-color: #999; }
+        .btn-cancelar:hover { background-color: #777; }
+        .btn-logout { background-color: #999; }
+
+        .error {
+            color: red;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top">
+        <h1>Control de Vacaciones</h1>
+        <form action="/logout" method="POST">
+            <button type="submit" class="btn-logout">Cerrar Sesión</button>
+        </form>
+    </div>
+
+    <main>
+        <h2>Editar Empleado</h2>
+
+        <form action="/empleados/editar" method="POST">
+            <!-- doc_id_anterior identifica al empleado original -->
+            <input type="hidden" name="doc_id_anterior" value="<!--DOC_ID-->" />
+
+            <label for="documento">Valor de Documento de Identidad</label>
+            <input type="text" id="documento" name="documento" value="<!--DOC_ID-->" required />
+
+            <label for="nombre">Nombre</label>
+            <input type="text" id="nombre" name="nombre" value="<!--NOMBRE-->" required />
+
+            <label for="puesto">Puesto</label>
+            <select id="puesto" name="id_puesto" required>
+                <option value="">-- Seleccione un puesto --</option>
+                <!--PUESTOS-->
+            </select>
+
+            <div class="botones">
+                <button type="submit" class="btn-guardar">Guardar</button>
+                <button type="button" class="btn-cancelar" onclick="window.location.href='/home'">Cancelar</button>
+            </div>
+
+            <p class="error"><!--ERROR--></p>
+        </form>
+    </main>
+
+</body>
+</html>
