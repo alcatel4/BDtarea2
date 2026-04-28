@@ -65,7 +65,7 @@ def do_insertar_empleado():
     cursor2 = conn2.cursor()
 
     cursor2.execute(
-        "DECLARE @rc INT; EXEC dbo.procDescErrores ?, @rc OUTPUT; SELECT @rc",
+        "DECLARE @rc INT; EXEC dbo.procErroresLogin ?, @rc OUTPUT; SELECT @rc",
         code
     )
     row2 = cursor2.fetchone()
@@ -207,7 +207,6 @@ def do_editar_empleado():
         "DECLARE @rc INT; EXEC dbo.procActualizarEmpleado ?, ?, ?, ?, ?, ?, @rc OUTPUT; SELECT @rc",
         doc_id_anterior, doc_id_nuevo, nombre, id_puesto, username, ip
     )
-    cursor.nextset()
     code = cursor.fetchone()[0]
 
     conn.commit()
@@ -222,7 +221,7 @@ def do_editar_empleado():
     cursor2 = conn2.cursor()
 
     cursor2.execute(
-        "DECLARE @rc INT; EXEC dbo.procDescErrores ?, @rc OUTPUT; SELECT @rc",
+        "DECLARE @rc INT; EXEC dbo.procErroresLogin ?, @rc OUTPUT; SELECT @rc",
         code
     )
     row2 = cursor2.fetchone()
