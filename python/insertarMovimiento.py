@@ -1,3 +1,5 @@
+# Módulo de inserción de movimientos de vacaciones (R6).
+
 from flask import Blueprint, request, session, redirect, url_for
 from conexionDB import get_connection
 
@@ -11,7 +13,7 @@ def mostrar_form():
     doc_id = request.args.get('doc_id')
     username = session['usuario']
 
-    # Info del empleado
+    # Se reutiliza procMostrarMovimientos para obtener doc, nombre y saldo actual del empleado
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
@@ -22,7 +24,7 @@ def mostrar_form():
     cursor.close()
     conn.close()
 
-    # Tipos de movimiento
+    # Se cargan los tipos de movimiento para el dropdown (Crédito y Débito)
     conn2 = get_connection()
     cursor2 = conn2.cursor()
     cursor2.execute(
@@ -61,6 +63,8 @@ def insertar():
 
     conn = get_connection()
     cursor = conn.cursor()
+
+    # El SP valida que el monto no genere saldo negativo, actualiza SaldoVacaciones y se registra en la bitácora
     cursor.execute(
         "DECLARE @rc INT; EXEC dbo.procInsertarMovimiento ?, ?, ?, ?, ?, @rc OUTPUT; SELECT @rc",
         username, doc_id, tipo_movimiento, monto, ip
@@ -86,7 +90,7 @@ def insertar():
         cursor2.close()
         conn2.close()
 
-        # Info del empleado
+        # Se recargan los datos del empleado para mantener el contexto en pantalla
         conn3 = get_connection()
         cursor3 = conn3.cursor()
         cursor3.execute(

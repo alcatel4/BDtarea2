@@ -115,49 +115,49 @@ SET @xml = N'
 -- 1.Puesto
 INSERT INTO dbo.Puesto (Nombre, SalarioxHora)
 SELECT
-    x.value('@Nombre',       'VARCHAR(64)')
-    ,x.value('@SalarioxHora', 'MONEY')
-FROM @xml.nodes('/Datos/Puestos/Puesto') AS t(x)
+    x.value('@Nombre', 'VARCHAR(64)') -- Extrae atributo @Nombre del XML
+    ,x.value('@SalarioxHora', 'MONEY') 
+FROM @xml.nodes('/Datos/Puestos/Puesto') AS t(x) -- Recorre cada nodo <Puesto> y lo asigna a la variable x
 
 -- 2.TipoEvento
 INSERT INTO dbo.TipoEvento (Id, Nombre)
 SELECT
-    x.value('@Id',     'INT')
+    x.value('@Id', 'INT')
     ,x.value('@Nombre', 'VARCHAR(64)')
 FROM @xml.nodes('/Datos/TiposEvento/TipoEvento') AS t(x)
 
 -- 3.TipoMovimiento
 INSERT INTO dbo.TipoMovimiento (Id, Nombre, TipoAccion)
 SELECT
-    x.value('@Id',         'INT')
-    ,x.value('@Nombre',     'VARCHAR(64)')
+    x.value('@Id', 'INT')
+    ,x.value('@Nombre', 'VARCHAR(64)')
     ,x.value('@TipoAccion', 'VARCHAR(64)')
 FROM @xml.nodes('/Datos/TiposMovimientos/TipoMovimiento') AS t(x)
 
 -- 4.Usuario
 INSERT INTO dbo.Usuario (Id, Username, Password)
 SELECT
-    x.value('@Id',     'INT')
+    x.value('@Id', 'INT')
     ,x.value('@Nombre', 'VARCHAR(64)')
-    ,x.value('@Pass',   'VARCHAR(64)')
+    ,x.value('@Pass', 'VARCHAR(64)')
 FROM @xml.nodes('/Datos/Usuarios/usuario') AS t(x)
 
 -- 5.Error
 INSERT INTO dbo.Error (Codigo, Descripcion)
 SELECT
-    x.value('@Codigo',      'INT')
+    x.value('@Codigo', 'INT')
     ,x.value('@Descripcion', 'VARCHAR(200)')
 FROM @xml.nodes('/Datos/Errores/error') AS t(x)
 
 -- 6.Empleado
 INSERT INTO dbo.Empleado (IdPuesto, ValorDocumentoIdentidad, Nombre, FechaContratacion, SaldoVacaciones, EsActivo)
 SELECT
-    p.Id
+    p.Id -- Id del puesto obtenido por el JOIN
     ,x.value('@ValorDocumentoIdentidad', 'VARCHAR(64)')
-    ,x.value('@Nombre',                  'VARCHAR(64)')
-    ,x.value('@FechaContratacion',       'DATE')
-    ,0
-    ,1
+    ,x.value('@Nombre', 'VARCHAR(64)')
+    ,x.value('@FechaContratacion', 'DATE')
+    ,0 -- Saldo inicial en 0
+    ,1 -- EsActivo por defecto en 1 (activo)
 FROM @xml.nodes('/Datos/Empleados/empleado') AS t(x)
 INNER JOIN dbo.Puesto AS p ON (p.Nombre = x.value('@Puesto', 'VARCHAR(64)'))
 
@@ -166,9 +166,9 @@ INSERT INTO dbo.Movimiento (IdEmpleado, IdTipoMovimiento, Fecha, Monto, NuevoSal
 SELECT
     e.Id
     ,tm.Id
-    ,x.value('@Fecha',    'DATE')
-    ,x.value('@Monto',    'MONEY')
-    ,0
+    ,x.value('@Fecha', 'DATE')
+    ,x.value('@Monto', 'MONEY')
+    ,0 -- NuevoSaldo inicial en 0
     ,u.Id
     ,x.value('@PostInIP', 'VARCHAR(64)')
     ,x.value('@PostTime', 'DATETIME')
@@ -178,6 +178,7 @@ INNER JOIN dbo.TipoMovimiento AS tm ON (tm.Nombre = x.value('@TipoMov', 'VARCHAR
 INNER JOIN dbo.Usuario AS u ON (u.Username = x.value('@PostByUser', 'VARCHAR(64)'))
 
 -- 8.Calcular NuevoSaldo de cada movimiento
+-- Credito suma, Debito resta. Si el resultado es negativo se deja en 0
 UPDATE m
 SET m.NuevoSaldo = (
     SELECT CASE 
@@ -186,7 +187,7 @@ SET m.NuevoSaldo = (
                 WHEN tm2.TipoAccion = 'Credito' THEN m2.Monto
                 WHEN tm2.TipoAccion = 'Debito' THEN -m2.Monto
             END
-        ) < 0 THEN 0
+        ) < 0 THEN 0 -- Evitar saldos negativos
         ELSE SUM(
             CASE 
                 WHEN tm2.TipoAccion = 'Credito' THEN m2.Monto
@@ -197,7 +198,7 @@ SET m.NuevoSaldo = (
     FROM dbo.Movimiento AS m2
     INNER JOIN dbo.TipoMovimiento AS tm2 ON (m2.IdTipoMovimiento = tm2.Id)
     WHERE (m2.IdEmpleado = m.IdEmpleado)
-    AND (m2.Fecha <= m.Fecha)
+    AND (m2.Fecha <= m.Fecha) -- Solo movimientos hasta la fecha del movimiento actual
 )
 FROM dbo.Movimiento AS m
 
@@ -210,7 +211,7 @@ SET e.SaldoVacaciones = (
                 WHEN tm.TipoAccion = 'Credito' THEN m.Monto
                 WHEN tm.TipoAccion = 'Debito' THEN -m.Monto
             END
-        ), 0) < 0 THEN 0
+        ), 0) < 0 THEN 0 -- Evitar saldos negativos
         ELSE ISNULL(SUM(
             CASE 
                 WHEN tm.TipoAccion = 'Credito' THEN m.Monto

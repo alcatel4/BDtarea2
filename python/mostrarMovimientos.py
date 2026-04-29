@@ -1,3 +1,5 @@
+# Módulo de listado de movimientos de vacaciones (R5).
+
 from flask import Blueprint, request, session, redirect, url_for
 from conexionDB import get_connection
 
@@ -8,12 +10,14 @@ def movimientos():
     if 'usuario' not in session:
         return redirect(url_for('login.login'))
 
+    # Acepta doc_id tanto por GET (desde insertarMovimiento) como por POST (desde home)
     doc_id = request.form.get('doc_id') or request.args.get('doc_id')
     username = session['usuario']
 
     conn = get_connection()
     cursor = conn.cursor()
 
+    # El SP retorna dos resultsets: info del empleado y sus movimientos
     cursor.execute(
         "DECLARE @rc INT; EXEC dbo.procMostrarMovimientos ?, ?, @rc OUTPUT; SELECT @rc",
         doc_id, username
@@ -35,6 +39,7 @@ def movimientos():
     if len(movimientos) == 0:
         filas_html = '<tr><td colspan="7">No hay movimientos</td></tr>'
     else:
+        # Columnas: fecha, tipo, monto, nuevo saldo, usuario, IP, estampa de tiempo (R5)
         for mov in movimientos:
             filas_html += f'''
             <tr>
