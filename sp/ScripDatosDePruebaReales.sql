@@ -61,7 +61,7 @@ SET @xml = N'
         <error Codigo="50008" Descripcion="Error de base de datos"/>
         <error Codigo="50009" Descripcion="Nombre de empleado no alfabetico"/>
         <error Codigo="50010" Descripcion="Valor de documento de identidad no alfabetico"/>
-        <error Codigo="50011" Descripcion="Monto del movimiento rechazado pues si se aplica el saldo seria negativo."/>
+        <error Codigo="50011" Descripcion="Monto del movimiento rechazado, el saldo seria negativo."/>
     </Errores>
     <Empleados>
         <empleado Puesto="Camarero" ValorDocumentoIdentidad="6993943" Nombre="Kaitlyn Jensen" FechaContratacion="2017-12-07"/>
@@ -161,65 +161,112 @@ SELECT
 FROM @xml.nodes('/Datos/Empleados/empleado') AS t(x)
 INNER JOIN dbo.Puesto AS p ON (p.Nombre = x.value('@Puesto', 'VARCHAR(64)'))
 
--- 7.Movimiento 
-INSERT INTO dbo.Movimiento (IdEmpleado, IdTipoMovimiento, Fecha, Monto, NuevoSaldo, IdPostByUser, PostInIP, PostTime)
+-- 7. Movimiento 
+DECLARE @TempMov TABLE (    -- Se usa tabla variable para recorrer los movimientos uno por uno
+    Fila INT IDENTITY(1,1)
+    ,ValorDocId VARCHAR(64)
+    ,TipoMov VARCHAR(64)
+    ,Fecha DATE
+    ,Monto MONEY
+    ,PostByUser VARCHAR(64)
+    ,PostInIP VARCHAR(64)
+    ,PostTime DATETIME
+)
+-- Carga los movimientos del XML ordenados por fecha ascendente
+INSERT INTO @TempMov (ValorDocId, TipoMov, Fecha, Monto, PostByUser, PostInIP, PostTime)
 SELECT
-    e.Id
-    ,tm.Id
-    ,x.value('@Fecha',    'DATE')
-    ,x.value('@Monto',    'MONEY')
-    ,0
-    ,u.Id
-    ,x.value('@PostInIP', 'VARCHAR(64)')
-    ,x.value('@PostTime', 'DATETIME')
+    x.value('@ValorDocId', 'VARCHAR(64)')
+    ,x.value('@TipoMov',   'VARCHAR(64)')
+    ,x.value('@Fecha',      'DATE')
+    ,x.value('@Monto',      'MONEY')
+    ,x.value('@PostByUser', 'VARCHAR(64)')
+    ,x.value('@PostInIP',   'VARCHAR(64)')
+    ,x.value('@PostTime',   'DATETIME')
 FROM @xml.nodes('/Datos/Movimientos/movimiento') AS t(x)
-INNER JOIN dbo.Empleado AS e ON (e.ValorDocumentoIdentidad = x.value('@ValorDocId', 'VARCHAR(64)'))
-INNER JOIN dbo.TipoMovimiento AS tm ON (tm.Nombre = x.value('@TipoMov', 'VARCHAR(64)'))
-INNER JOIN dbo.Usuario AS u ON (u.Username = x.value('@PostByUser', 'VARCHAR(64)'))
+ORDER BY x.value('@Fecha', 'DATE') ASC
 
--- 8.Calcular NuevoSaldo de cada movimiento
-UPDATE m
-SET m.NuevoSaldo = (
-    SELECT CASE 
-        WHEN SUM(
-            CASE 
-                WHEN tm2.TipoAccion = 'Credito' THEN m2.Monto
-                WHEN tm2.TipoAccion = 'Debito' THEN -m2.Monto
-            END
-        ) < 0 THEN 0
-        ELSE SUM(
-            CASE 
-                WHEN tm2.TipoAccion = 'Credito' THEN m2.Monto
-                WHEN tm2.TipoAccion = 'Debito' THEN -m2.Monto
-            END
-        )
-    END
-    FROM dbo.Movimiento AS m2
-    INNER JOIN dbo.TipoMovimiento AS tm2 ON (m2.IdTipoMovimiento = tm2.Id)
-    WHERE (m2.IdEmpleado = m.IdEmpleado)
-    AND (m2.Fecha <= m.Fecha)
-)
-FROM dbo.Movimiento AS m
+DECLARE @i INT = 1
+DECLARE @total INT
+SELECT @total = COUNT(*) 
+FROM @TempMov
 
--- 9.Actualizar SaldoVacaciones de cada empleado
-UPDATE e
-SET e.SaldoVacaciones = (
-    SELECT CASE
-        WHEN ISNULL(SUM(
-            CASE 
-                WHEN tm.TipoAccion = 'Credito' THEN m.Monto
-                WHEN tm.TipoAccion = 'Debito' THEN -m.Monto
-            END
-        ), 0) < 0 THEN 0
-        ELSE ISNULL(SUM(
-            CASE 
-                WHEN tm.TipoAccion = 'Credito' THEN m.Monto
-                WHEN tm.TipoAccion = 'Debito' THEN -m.Monto
-            END
-        ), 0)
+DECLARE @vDocId VARCHAR(64)
+DECLARE @vTipoMov VARCHAR(64)
+DECLARE @vMonto MONEY
+DECLARE @vPostByUser VARCHAR(64)
+DECLARE @vPostInIP VARCHAR(64)
+DECLARE @vPostTime DATETIME
+DECLARE @vFecha DATE
+DECLARE @vIdEmpleado INT
+DECLARE @vIdTipoMov INT
+DECLARE @vIdUsuario INT
+DECLARE @vTipoAccion VARCHAR(64)
+DECLARE @vSaldoActual MONEY
+DECLARE @vSaldoNuevo MONEY
+
+WHILE (@i <= @total) -- Recorre cada movimiento en orden cronológico
+BEGIN
+    SELECT @vDocId = ValorDocId
+        ,@vTipoMov = TipoMov
+        ,@vMonto = Monto
+        ,@vPostByUser = PostByUser
+        ,@vPostInIP = PostInIP
+        ,@vPostTime = PostTime
+        ,@vFecha = Fecha
+    FROM @TempMov
+    WHERE (Fila = @i)
+
+    SELECT @vIdEmpleado = e.Id
+        ,@vSaldoActual = e.SaldoVacaciones
+    FROM dbo.Empleado AS e
+    WHERE (e.ValorDocumentoIdentidad = @vDocId)
+
+    SELECT @vIdTipoMov = tm.Id
+        ,@vTipoAccion = tm.TipoAccion
+    FROM dbo.TipoMovimiento AS tm
+    WHERE (tm.Nombre = @vTipoMov)
+
+    SELECT @vIdUsuario = u.Id
+    FROM dbo.Usuario AS u
+    WHERE (u.Username = @vPostByUser)
+
+    IF (@vTipoAccion = 'Credito') -- Calcula el nuevo saldo según el tipo de acción
+    BEGIN
+        SET @vSaldoNuevo = @vSaldoActual + @vMonto
     END
-    FROM dbo.Movimiento AS m
-    INNER JOIN dbo.TipoMovimiento AS tm ON (m.IdTipoMovimiento = tm.Id)
-    WHERE (m.IdEmpleado = e.Id)
-)
-FROM dbo.Empleado AS e
+    ELSE
+    BEGIN
+        SET @vSaldoNuevo = @vSaldoActual - @vMonto
+        IF (@vSaldoNuevo < 0)
+        BEGIN
+            SET @vSaldoNuevo = 0
+        END
+    END
+
+    INSERT INTO dbo.Movimiento (
+        IdEmpleado
+        ,IdTipoMovimiento
+        ,Fecha
+        ,Monto
+        ,NuevoSaldo
+        ,IdPostByUser
+        ,PostInIP
+        ,PostTime
+    )
+    VALUES (
+        @vIdEmpleado
+        ,@vIdTipoMov
+        ,@vFecha
+        ,@vMonto
+        ,@vSaldoNuevo
+        ,@vIdUsuario
+        ,@vPostInIP
+        ,@vPostTime
+    )
+
+    UPDATE dbo.Empleado
+    SET SaldoVacaciones = @vSaldoNuevo
+    WHERE (Id = @vIdEmpleado)
+
+    SET @i = @i + 1
+END
