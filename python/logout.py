@@ -1,3 +1,5 @@
+# Módulo de cierre de sesión (R1: Logout).
+
 from flask import Blueprint, request, session, redirect, url_for
 from conexionDB import get_connection
 
@@ -11,6 +13,7 @@ def logout():
     conn = get_connection()
     cursor = conn.cursor()
 
+    # El SP registra el evento de Logout en bitácora antes de cerrar la sesión (R7)
     cursor.execute(
         "DECLARE @rc INT; EXEC dbo.procLogout ?, ?, @rc OUTPUT; SELECT @rc",
         username, ip
@@ -20,5 +23,6 @@ def logout():
     cursor.close()
     conn.close()
 
+    # Se elimina el usuario de la sesión para cerrar sesión y se redirige al login
     session.pop('usuario', None)
     return redirect(url_for('login.login'))

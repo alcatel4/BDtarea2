@@ -1,3 +1,5 @@
+# Módulo principal (home) — R2: Listar empleados con filtro.
+
 from flask import Blueprint, request, session, redirect, url_for
 from conexionDB import get_connection
 
@@ -8,13 +10,14 @@ def home():
     if 'usuario' not in session:
         return redirect(url_for('login.login'))
     
-    filtro = request.args.get('filtro', '')
+    filtro = request.args.get('filtro', '') # Vacio = listar todos los empleados
     username = session['usuario']
-    ip = request.remote_addr
+    ip = request.remote_addr # IP para trazabilidad en la bitácora (R7)
 
     conn = get_connection()
     cursor = conn.cursor()
 
+    # El SP devuelve si el filtro es por nombre (letras) o por cédula (números)
     cursor.execute(
         "DECLARE @rc INT; EXEC dbo.procMostrarEmpleados ?, ?, ?, @rc OUTPUT; SELECT @rc",
         filtro, username, ip
@@ -30,6 +33,7 @@ def home():
     else:
         filas_html = ''
         for row in rows:
+            # Los ids de empleado van en campos ocultos, nunca se muestran al usuario
             filas_html += f'''
             <tr>
                 <td>{row[0]}</td>
@@ -60,6 +64,8 @@ def home():
     with open('html/home.html', 'r', encoding='utf-8') as f:
         html = f.read()
     
+    # Alerta de confirmación antes de ejecutar el borrado lógico (R4)
+    # El campo de confirmado distingue si fue un intento de borrado o fue un borrado efectivo 
     script = """
     <script>
     function confirmarEliminar(docId, nombre) {

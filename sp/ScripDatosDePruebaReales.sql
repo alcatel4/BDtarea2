@@ -1,3 +1,22 @@
+-- Borrar datos existentes en orden inverso por FK
+DELETE FROM dbo.Movimiento
+DELETE FROM dbo.BitacoraEvento
+DELETE FROM dbo.Empleado
+DELETE FROM dbo.DBError
+DELETE FROM dbo.Error
+DELETE FROM dbo.TipoMovimiento
+DELETE FROM dbo.TipoEvento
+DELETE FROM dbo.Usuario
+DELETE FROM dbo.Puesto
+
+-- Resetear IDENTITY
+DBCC CHECKIDENT ('dbo.Puesto', RESEED, 0)
+DBCC CHECKIDENT ('dbo.Empleado', RESEED, 0)
+DBCC CHECKIDENT ('dbo.Movimiento', RESEED, 0)
+DBCC CHECKIDENT ('dbo.BitacoraEvento', RESEED, 0)
+DBCC CHECKIDENT ('dbo.DBError', RESEED, 0)
+DBCC CHECKIDENT ('dbo.Error', RESEED, 0)
+
 -- Cargar datos desde XML
 DECLARE @xml XML
 SET @xml = N'
@@ -244,7 +263,7 @@ BEGIN
     END
 
     INSERT INTO dbo.Movimiento (
-        IdEmpleado
+         IdEmpleado
         ,IdTipoMovimiento
         ,Fecha
         ,Monto
@@ -254,7 +273,7 @@ BEGIN
         ,PostTime
     )
     VALUES (
-        @vIdEmpleado
+         @vIdEmpleado
         ,@vIdTipoMov
         ,@vFecha
         ,@vMonto

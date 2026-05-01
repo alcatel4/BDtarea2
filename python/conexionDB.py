@@ -1,3 +1,5 @@
+# Módulo de conexión a la base de datos
+
 import pyodbc
 
 def get_connection():
