@@ -1,4 +1,4 @@
--- Borrar datos existentes en orden inverso por FK
+-- Borrar datos existentes 
 DELETE FROM dbo.Movimiento
 DELETE FROM dbo.BitacoraEvento
 DELETE FROM dbo.Empleado
@@ -134,37 +134,37 @@ SET @xml = N'
 -- 1.Puesto
 INSERT INTO dbo.Puesto (Nombre, SalarioxHora)
 SELECT
-    x.value('@Nombre',       'VARCHAR(64)')
+    x.value('@Nombre', 'VARCHAR(64)')
     ,x.value('@SalarioxHora', 'MONEY')
 FROM @xml.nodes('/Datos/Puestos/Puesto') AS t(x)
 
 -- 2.TipoEvento
 INSERT INTO dbo.TipoEvento (Id, Nombre)
 SELECT
-    x.value('@Id',     'INT')
+    x.value('@Id', 'INT')
     ,x.value('@Nombre', 'VARCHAR(64)')
 FROM @xml.nodes('/Datos/TiposEvento/TipoEvento') AS t(x)
 
 -- 3.TipoMovimiento
 INSERT INTO dbo.TipoMovimiento (Id, Nombre, TipoAccion)
 SELECT
-    x.value('@Id',         'INT')
-    ,x.value('@Nombre',     'VARCHAR(64)')
+    x.value('@Id', 'INT')
+    ,x.value('@Nombre', 'VARCHAR(64)')
     ,x.value('@TipoAccion', 'VARCHAR(64)')
 FROM @xml.nodes('/Datos/TiposMovimientos/TipoMovimiento') AS t(x)
 
 -- 4.Usuario
 INSERT INTO dbo.Usuario (Id, Username, Password)
 SELECT
-    x.value('@Id',     'INT')
+    x.value('@Id', 'INT')
     ,x.value('@Nombre', 'VARCHAR(64)')
-    ,x.value('@Pass',   'VARCHAR(64)')
+    ,x.value('@Pass', 'VARCHAR(64)')
 FROM @xml.nodes('/Datos/Usuarios/usuario') AS t(x)
 
 -- 5.Error
 INSERT INTO dbo.Error (Codigo, Descripcion)
 SELECT
-    x.value('@Codigo',      'INT')
+    x.value('@Codigo', 'INT')
     ,x.value('@Descripcion', 'VARCHAR(200)')
 FROM @xml.nodes('/Datos/Errores/error') AS t(x)
 
@@ -173,8 +173,8 @@ INSERT INTO dbo.Empleado (IdPuesto, ValorDocumentoIdentidad, Nombre, FechaContra
 SELECT
     p.Id
     ,x.value('@ValorDocumentoIdentidad', 'VARCHAR(64)')
-    ,x.value('@Nombre',                  'VARCHAR(64)')
-    ,x.value('@FechaContratacion',       'DATE')
+    ,x.value('@Nombre', 'VARCHAR(64)')
+    ,x.value('@FechaContratacion', 'DATE')
     ,0
     ,1
 FROM @xml.nodes('/Datos/Empleados/empleado') AS t(x)
@@ -195,12 +195,12 @@ DECLARE @TempMov TABLE (    -- Se usa tabla variable para recorrer los movimient
 INSERT INTO @TempMov (ValorDocId, TipoMov, Fecha, Monto, PostByUser, PostInIP, PostTime)
 SELECT
     x.value('@ValorDocId', 'VARCHAR(64)')
-    ,x.value('@TipoMov',   'VARCHAR(64)')
-    ,x.value('@Fecha',      'DATE')
-    ,x.value('@Monto',      'MONEY')
+    ,x.value('@TipoMov', 'VARCHAR(64)')
+    ,x.value('@Fecha', 'DATE')
+    ,x.value('@Monto', 'MONEY')
     ,x.value('@PostByUser', 'VARCHAR(64)')
-    ,x.value('@PostInIP',   'VARCHAR(64)')
-    ,x.value('@PostTime',   'DATETIME')
+    ,x.value('@PostInIP', 'VARCHAR(64)')
+    ,x.value('@PostTime', 'DATETIME')
 FROM @xml.nodes('/Datos/Movimientos/movimiento') AS t(x)
 ORDER BY x.value('@Fecha', 'DATE') ASC
 
@@ -263,7 +263,7 @@ BEGIN
     END
 
     INSERT INTO dbo.Movimiento (
-         IdEmpleado
+        IdEmpleado
         ,IdTipoMovimiento
         ,Fecha
         ,Monto
@@ -273,7 +273,7 @@ BEGIN
         ,PostTime
     )
     VALUES (
-         @vIdEmpleado
+        @vIdEmpleado
         ,@vIdTipoMov
         ,@vFecha
         ,@vMonto
